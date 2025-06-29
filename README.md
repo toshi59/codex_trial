@@ -9,3 +9,7 @@
 ```bash
 python guess_number.py
 ```
+
+## Status
+
+This game is now complete and ready for you to play. Enjoy guessing!
