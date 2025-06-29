@@ -1,11 +1,10 @@
 # codex_trial
 
-This repository contains a simple Python application called **guess_number.py**.
+このリポジトリには、**guess_number.py** という簡単な Python アプリケーションが含まれています。
 
-The program picks a random number between 1 and 20 and prompts the user to guess
-until the correct number is entered.
+このプログラムは 1 から 20 の間でランダムな数を選び、ユーザーが正しい数を入力するまで繰り返し推測させます。
 
-Run it with:
+実行するには次のコマンドを使用します:
 
 ```bash
 python guess_number.py
