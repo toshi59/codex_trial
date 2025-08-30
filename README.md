@@ -13,3 +13,7 @@ python guess_number.py
 ## Status
 
 This game is now complete and ready for you to play. Enjoy guessing!
+
+## Web UI
+`index.html`をブラウザで開くと、モデル評価の一覧が表示されます。
+右上の「管理者ログイン」から、ユーザー名 `admin`、パスワード `0000` でダッシュボードにアクセスできます。
