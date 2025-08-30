@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>AIモデル評価管理</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    table, th, td { border: 1px solid #aaa; border-collapse: collapse; padding: 4px; }
+    th { background:#eee; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <button id="lang-toggle">English</button>
+
+  <div id="login">
+    <h2 data-i18n="login_title">管理者ログイン</h2>
+    <label data-i18n="username_label">ユーザー名</label>
+    <input type="text" id="username" />
+    <label data-i18n="password_label">パスワード</label>
+    <input type="password" id="password" />
+    <button id="login-btn" data-i18n="login_btn">ログイン</button>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <h2 data-i18n="dashboard_title">モデル評価ダッシュボード</h2>
+    <button id="logout" data-i18n="logout_btn">ログアウト</button>
+
+    <h3 data-i18n="add_model_title">モデルの登録</h3>
+    <input id="model-name" placeholder="モデル名" />
+    <button id="add-model" data-i18n="add_model_btn">追加</button>
+
+    <div>
+      <h3 data-i18n="filter_title">フィルタ</h3>
+      <label><input type="checkbox" class="filter" value="GDPR" />GDPR</label>
+      <label><input type="checkbox" class="filter" value="ISO" />ISO</label>
+      <label><input type="checkbox" class="filter" value="NIST" />NIST</label>
+      <label><input type="checkbox" class="filter" value="OSS" />OSS</label>
+      <label><input type="checkbox" class="filter" value="SLSA" />SLSA</label>
+    </div>
+
+    <div id="models"></div>
+  </div>
+
+<script>
+const translations = {
+  ja: {
+    login_title: '管理者ログイン',
+    username_label: 'ユーザー名',
+    password_label: 'パスワード',
+    login_btn: 'ログイン',
+    dashboard_title: 'モデル評価ダッシュボード',
+    logout_btn: 'ログアウト',
+    add_model_title: 'モデルの登録',
+    add_model_btn: '追加',
+    filter_title: 'フィルタ'
+  },
+  en: {
+    login_title: 'Admin Login',
+    username_label: 'Username',
+    password_label: 'Password',
+    login_btn: 'Login',
+    dashboard_title: 'Model Evaluation Dashboard',
+    logout_btn: 'Logout',
+    add_model_title: 'Add Model',
+    add_model_btn: 'Add',
+    filter_title: 'Filters'
+  }
+};
+let currentLang = 'ja';
+function translate(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(translations[currentLang][key]) el.textContent = translations[currentLang][key];
+  });
+}
+
+document.getElementById('lang-toggle').onclick = ()=>{
+  currentLang = currentLang === 'ja' ? 'en' : 'ja';
+  translate();
+};
+
+translate();
+
+const evalItems = [
+  {cat:'法規制・プライバシー', item:'GDPR適合性', tag:['GDPR'], risk:'罰金・停止命令・ブランド毀損'},
+  {cat:'法規制・プライバシー', item:'DPIA/PIAの実施', tag:['GDPR'], risk:'規制違反・訴訟'},
+  {cat:'法規制・プライバシー', item:'EU AI Act影響', tag:['GDPR'], risk:'罰金・販売停止'},
+  {cat:'ライセンス・IP', item:'モデル/重みのライセンス', tag:['OSS'], risk:'配布停止・係争'},
+  {cat:'データ管理・セキュリティ', item:'PII/機微情報制御', tag:['ISO'], risk:'漏えい・規制違反'},
+  {cat:'データ管理・セキュリティ', item:'暗号化', tag:['ISO'], risk:'盗難・改ざん'},
+  {cat:'安全性・ガバナンス', item:'レッドチーム/安全性評価', tag:['NIST'], risk:'不正出力・悪用'},
+  {cat:'安全性・ガバナンス', item:'バイアス/公平性', tag:['ISO'], risk:'差別・評判リスク'},
+  {cat:'モデル性能・品質', item:'業務適合性', tag:[''], risk:'品質不良・クレーム'},
+  {cat:'供給元・メンテナンス(OSS)', item:'活動状況', tag:['OSS'], risk:'未修正脆弱性'},
+  {cat:'デプロイ/運用(MLOps)', item:'再現可能なビルド', tag:['SLSA'], risk:'改ざん・差替'},
+  {cat:'トラスト/透明性', item:'モデルカード/システムカード', tag:[''], risk:'誤用・不信'}
+];
+
+function render(){
+  const container = document.getElementById('models');
+  container.innerHTML='';
+  const filters = Array.from(document.querySelectorAll('.filter:checked')).map(c=>c.value);
+  models.forEach((m, idx)=>{
+    const div = document.createElement('div');
+    const h = document.createElement('h3');
+    h.textContent = m.name + ' (スコア: ' + calcScore(m).toFixed(2) + ')';
+    div.appendChild(h);
+    const table = document.createElement('table');
+    const head = document.createElement('tr');
+    ['カテゴリ','チェック項目','達成状況','リスク'].forEach(t=>{
+      const th=document.createElement('th');th.textContent=t;head.appendChild(th);
+    });
+    table.appendChild(head);
+    evalItems.forEach((ei,i)=>{
+      if(filters.length && !ei.tag.some(t=>filters.includes(t))) return;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${ei.cat}</td><td>${ei.item}</td>`;
+      const td=document.createElement('td');
+      const select=document.createElement('select');
+      ['未確認','未達','達成'].forEach(s=>{
+        const o=document.createElement('option');o.value=s;o.textContent=s;select.appendChild(o);
+      });
+      select.value=m.status[i]||'未確認';
+      select.onchange=()=>{m.status[i]=select.value;save();render();};
+      td.appendChild(select);tr.appendChild(td);
+      const td2=document.createElement('td');td2.textContent=ei.risk;tr.appendChild(td2);
+      table.appendChild(tr);
+    });
+    div.appendChild(table);
+    container.appendChild(div);
+  });
+}
+
+function calcScore(m){
+  let score=0,count=0;
+  m.status.forEach(v=>{if(v==='達成'){score+=1;} if(v) count++;});
+  return count?score/count:0;
+}
+
+function save(){
+  localStorage.setItem('models', JSON.stringify(models));
+}
+
+let models = JSON.parse(localStorage.getItem('models')||'[]');
+render();
+
+// login
+const loginBtn=document.getElementById('login-btn');
+loginBtn.onclick=()=>{
+  if(document.getElementById('username').value==='admin' && document.getElementById('password').value==='password'){
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+  }else{
+    alert('ログイン失敗');
+  }
+};
+
+document.getElementById('logout').onclick=()=>{
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+};
+
+// add model
+const addModel=document.getElementById('add-model');
+addModel.onclick=()=>{
+  const name=document.getElementById('model-name').value.trim();
+  if(!name) return;
+  models.push({name, status:[]});
+  document.getElementById('model-name').value='';
+  save();
+  render();
+};
+
+// filter
+Array.from(document.querySelectorAll('.filter')).forEach(cb=>{
+  cb.onchange=render;
+});
+</script>
+</body>
+</html>
