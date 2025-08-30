@@ -13,3 +13,19 @@ python guess_number.py
 ## Status
 
 This game is now complete and ready for you to play. Enjoy guessing!
+
+## Web UI
+ブラウザで `index.html` を開くと、モデル評価の一覧が表示されます。初回ロード時には「サンプルモデル」が読み込まれ、評価データはブラウザの LocalStorage に保存されます。
+
+主な機能:
+
+- ✅ 規格タグ (GDPR/ISO/NIST/OSS/SLSA) によるフィルター
+- ✅ 右上の「管理者ログイン」からのダッシュボードアクセス (ID: `admin` / PW: `0000`)
+- ✅ ダッシュボードでのモデル追加・評価ステータス更新
+- ✅ ヘッダーのボタンで日本語/英語の切り替え
+
+ローカルで確認するには次のコマンドを実行し、`http://localhost:8000/index.html` を開きます:
+
+```bash
+python -m http.server 8000
+```
